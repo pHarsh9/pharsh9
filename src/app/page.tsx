@@ -103,31 +103,30 @@ const SKILLS_DATA = {
   INFRASTRUCTURE: ['POSTGRESQL', 'REDIS', 'AMAZON WEB SERVICES (AWS)', 'VERCEL', 'DOCKER', 'WEBSOCKETS', 'APIS']
 };
 
+const SectionLoader = ({ title }: { title: string }) => (
+  <div className="w-full py-12 flex flex-col items-start justify-center font-mono border border-dashed border-outline-variant/20 p-6 my-4 animate-pulse">
+    <div className="flex items-center space-x-3 mb-2">
+      <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping"></div>
+      <div className="text-[10px] tracking-[0.25em] text-primary uppercase font-bold">
+        LOADING {title} REFERENCE DATA...
+      </div>
+    </div>
+    <div className="text-[9px] text-secondary tracking-widest uppercase">
+      [ TELEMETRY ACTIVE - RECONCILING SYSTEM ABSTRACTIONS ]
+    </div>
+  </div>
+);
+
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [activeSkillsTab, setActiveSkillsTab] = useState<keyof typeof SKILLS_DATA>('LANGUAGES');
   const [expandedJob, setExpandedJob] = useState<number | null>(0);
   const [isContactOpen, setIsContactOpen] = useState(false);
 
-  const [projects, setProjects] = useState<Project[]>(PROJECTS_DATA);
-  const [experiences, setExperiences] = useState<Job[]>(JOBS_DATA);
-  const [skills, setSkills] = useState<typeof SKILLS_DATA>(SKILLS_DATA);
-  const [profile, setProfile] = useState<any>({
-    monogram: "pHarsh9",
-    fullName: "Harsh Sharma",
-    heroSlogan: "FULL STACK WEB DEVELOPER & MOBILE APPLICATION ENGINEER CONSTRUCTING SCALABLE DIGITAL ARCHITECTURES.",
-    bioTitle: "HARSH SHARMA (PHARSH9)",
-    bioDescription: "A full stack web developer and mobile application engineer with a passion for designing scalable, high-concurrency software and high-fidelity native layouts.",
-    field: "FULL STACK, MOBILE",
-    focus: "SYSTEM ARCHITECTURE",
-    location: "INDIA [GMT +5:30]",
-    availability: "OPEN FOR CONTRACTS",
-    socialLinks: [
-      { platform: "LinkedIn", url: "#" },
-      { platform: "Instagram", url: "#" }
-    ],
-    copyrightText: "© 2026 PHARSH9 SYSTEMS. ALL RIGHTS RESERVED."
-  });
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [experiences, setExperiences] = useState<Job[] | null>(null);
+  const [skills, setSkills] = useState<typeof SKILLS_DATA | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   React.useEffect(() => {
@@ -188,36 +187,41 @@ export default function Home() {
       } catch (err) {
         console.error("Error loading dynamic data:", err);
       } finally {
-        // Add a slight intentional delay for telemetry reconciliation visual experience
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 1200);
+        // Fallbacks for failed/empty fetches to ensure no perpetual loading and graceful fallback
+        setProfile((prev: any) => prev || {
+          monogram: "PORTFOLIO",
+          fullName: "System User",
+          heroSlogan: "DEVELOPER PORTFOLIO CONSTRUCTING SCALABLE DIGITAL ARCHITECTURES.",
+          bioTitle: "BIOGRAPHY",
+          bioDescription: "System description is currently being loaded from the database.",
+          field: "DEVELOPMENT",
+          focus: "ENGINEERING",
+          location: "REMOTE",
+          availability: "AVAILABLE",
+          socialLinks: [],
+          copyrightText: "ALL RIGHTS RESERVED."
+        });
+        setProjects((prev) => prev || []);
+        setExperiences((prev) => prev || []);
+        setSkills((prev) => prev || SKILLS_DATA);
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-background z-[100] flex flex-col items-center justify-center space-y-4">
-        <div className="w-16 h-[1px] bg-primary animate-pulse"></div>
-        <div className="font-label-caps text-[10px] tracking-[0.25em] text-secondary animate-pulse uppercase">
-          RECONCILING TELEMETRY SYSTEMS...
-        </div>
-      </div>
-    );
-  }
-
   // Map filters to fit Full Stack project categories
-  const filteredProjects = activeCategory === 'ALL'
-    ? projects
-    : projects.filter(p => {
-        if (activeCategory === 'INFERENCE ENGINES') return p.categoryLabel === 'WEB APPLICATION';
-        if (activeCategory === 'DISTRIBUTED SYSTEMS') return p.categoryLabel === 'MOBILE APPLICATION';
-        if (activeCategory === 'CORE KERNELS') return p.categoryLabel === 'BACKEND SYSTEM';
-        return false;
-      });
+  const filteredProjects = !projects
+    ? []
+    : activeCategory === 'ALL'
+      ? projects
+      : projects.filter(p => {
+          if (activeCategory === 'INFERENCE ENGINES') return p.categoryLabel === 'WEB APPLICATION';
+          if (activeCategory === 'DISTRIBUTED SYSTEMS') return p.categoryLabel === 'MOBILE APPLICATION';
+          if (activeCategory === 'CORE KERNELS') return p.categoryLabel === 'BACKEND SYSTEM';
+          return false;
+        });
 
   const categories = ['ALL', 'WEB APPLICATION', 'MOBILE APPLICATION', 'BACKEND SYSTEM'];
 
@@ -236,9 +240,13 @@ export default function Home() {
           </ScrollReveal>
           
           <ScrollReveal delayMs={150}>
-            <p className="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mb-stack-xl leading-relaxed">
-              {profile.heroSlogan}
-            </p>
+            {profile ? (
+              <p className="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mb-stack-xl leading-relaxed">
+                {profile.heroSlogan}
+              </p>
+            ) : (
+              <div className="h-6 w-full max-w-xl bg-outline-variant/30 animate-pulse mb-stack-xl rounded-none"></div>
+            )}
           </ScrollReveal>
 
           <ScrollReveal delayMs={300}>
@@ -273,49 +281,55 @@ export default function Home() {
                 <h2 className="font-display text-4xl md:text-5xl font-semibold">About Me</h2>
               </ScrollReveal>
             </div>
-            <div className="md:col-span-8 space-y-stack-md">
-              <ScrollReveal delayMs={100}>
-                <p className="font-display text-2xl md:text-3xl text-primary font-medium leading-snug">
-                  {profile.bioTitle}
-                </p>
-              </ScrollReveal>
-              <ScrollReveal delayMs={200}>
-                <p className="font-body text-base text-secondary leading-relaxed text-justified">
-                  {profile.bioDescription}
-                </p>
-              </ScrollReveal>
-              
-              {/* Dynamic specs row (horizontal layout matching the typography system) */}
-              <ScrollReveal delayMs={250} className="w-full border-y border-outline-variant/30 py-6 my-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="flex flex-col">
-                    <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">FIELD</span>
-                    <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.field}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">FOCUS</span>
-                    <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.focus}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">LOCATION</span>
-                    <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.location}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">AVAILABILITY</span>
-                    <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.availability}</span>
-                  </div>
-                </div>
-              </ScrollReveal>
+            <div className="md:col-span-8">
+              {profile ? (
+                <div className="space-y-stack-md">
+                  <ScrollReveal delayMs={100}>
+                    <p className="font-display text-2xl md:text-3xl text-primary font-medium leading-snug">
+                      {profile.bioTitle}
+                    </p>
+                  </ScrollReveal>
+                  <ScrollReveal delayMs={200}>
+                    <p className="font-body text-base text-secondary leading-relaxed text-justified">
+                      {profile.bioDescription}
+                    </p>
+                  </ScrollReveal>
+                  
+                  {/* Dynamic specs row (horizontal layout matching the typography system) */}
+                  <ScrollReveal delayMs={250} className="w-full border-y border-outline-variant/30 py-6 my-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div className="flex flex-col">
+                        <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">FIELD</span>
+                        <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.field}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">FOCUS</span>
+                        <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.focus}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">LOCATION</span>
+                        <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.location}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-secondary font-label-caps text-[10px] tracking-wider mb-2">AVAILABILITY</span>
+                        <span className="font-display text-[15px] font-medium text-primary uppercase">{profile.availability}</span>
+                      </div>
+                    </div>
+                  </ScrollReveal>
 
-              <ScrollReveal delayMs={300} className="pt-2">
-                <a
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); alert("Resume PDF downloaded successfully."); }}
-                  className="inline-block bg-primary text-background px-stack-lg py-stack-sm font-body font-semibold uppercase tracking-widest text-[12px] hover:opacity-85 transition-opacity"
-                >
-                  Download CV / Resume
-                </a>
-              </ScrollReveal>
+                  <ScrollReveal delayMs={300} className="pt-2">
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); alert("Resume PDF downloaded successfully."); }}
+                      className="inline-block bg-primary text-background px-stack-lg py-stack-sm font-body font-semibold uppercase tracking-widest text-[12px] hover:opacity-85 transition-opacity"
+                    >
+                      Download CV / Resume
+                    </a>
+                  </ScrollReveal>
+                </div>
+              ) : (
+                <SectionLoader title="IDENTITY" />
+              )}
             </div>
           </div>
         </section>
@@ -364,52 +378,55 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          {/* Asymmetric Project Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter transition-all duration-500">
-            {projects.map((project, index) => {
-              const isVisible = filteredProjects.some(p => p.slug === project.slug);
-              return (
-                <div
-                  key={project.slug}
-                  className={`${project.cols} transition-all duration-500 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-20 scale-[0.98] pointer-events-none'
-                  } group`}
-                >
-                  <ScrollReveal delayMs={index * 100}>
-                    <Link href={`/projects/${project.slug}`}>
-                      <div className={`overflow-hidden mb-stack-sm ${project.aspectRatio} bg-surface relative`}>
-                        <Image
-                          fill
-                          className="object-cover grayscale transition-all duration-700 group-hover:scale-[1.03] group-hover:grayscale-0 opacity-60 group-hover:opacity-100"
-                          alt={project.title}
-                          src={project.image}
-                          sizes="(max-w-700px) 100vw, 80vw"
-                        />
-                        <div className="absolute inset-0 border border-white/5 pointer-events-none"></div>
-                      </div>
-
-                      <div className="flex justify-between items-start pt-stack-sm">
-                        <div>
-                          <span className="font-label-caps text-[10px] text-secondary tracking-widest block mb-1">
-                            {project.categoryLabel}
-                          </span>
-                          <h3 className="font-display text-2xl font-medium tracking-tight text-primary transition-colors group-hover:text-secondary">
-                            {project.title}
-                          </h3>
-                          <p className="font-body text-[15px] text-on-secondary-container mt-1 max-w-xl">
-                            {project.description}
-                          </p>
+          {projects ? (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter transition-all duration-500">
+              {projects.map((project, index) => {
+                const isVisible = filteredProjects.some(p => p.slug === project.slug);
+                return (
+                  <div
+                    key={project.slug}
+                    className={`${project.cols} transition-all duration-500 ${
+                      isVisible ? 'opacity-100 scale-100' : 'opacity-20 scale-[0.98] pointer-events-none'
+                    } group`}
+                  >
+                    <ScrollReveal delayMs={index * 100}>
+                      <Link href={`/projects/${project.slug}`}>
+                        <div className={`overflow-hidden mb-stack-sm ${project.aspectRatio} bg-surface relative`}>
+                          <Image
+                            fill
+                            className="object-cover grayscale transition-all duration-700 group-hover:scale-[1.03] group-hover:grayscale-0 opacity-60 group-hover:opacity-100"
+                            alt={project.title}
+                            src={project.image}
+                            sizes="(max-w-700px) 100vw, 80vw"
+                          />
+                          <div className="absolute inset-0 border border-white/5 pointer-events-none"></div>
                         </div>
-                        <span className="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform duration-300">
-                          arrow_forward
-                        </span>
-                      </div>
-                    </Link>
-                  </ScrollReveal>
-                </div>
-              );
-            })}
-          </div>
+
+                        <div className="flex justify-between items-start pt-stack-sm">
+                          <div>
+                            <span className="font-label-caps text-[10px] text-secondary tracking-widest block mb-1">
+                              {project.categoryLabel}
+                            </span>
+                            <h3 className="font-display text-2xl font-medium tracking-tight text-primary transition-colors group-hover:text-secondary">
+                              {project.title}
+                            </h3>
+                            <p className="font-body text-[15px] text-on-secondary-container mt-1 max-w-xl">
+                              {project.description}
+                            </p>
+                          </div>
+                          <span className="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform duration-300">
+                            arrow_forward
+                          </span>
+                        </div>
+                      </Link>
+                    </ScrollReveal>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <SectionLoader title="WORKS" />
+          )}
         </section>
 
         {/* Career Timeline / Experience Section */}
@@ -421,48 +438,54 @@ export default function Home() {
                 <h2 className="font-display text-4xl md:text-5xl font-semibold">Experience</h2>
               </ScrollReveal>
             </div>
-            <div className="md:col-span-8 space-y-stack-md">
-              {experiences.map((job, index) => {
-                const isExpanded = expandedJob === index;
-                return (
-                  <ScrollReveal key={job.company} delayMs={index * 100} className="border-b border-outline-variant/20 pb-4">
-                    <button
-                      onClick={() => setExpandedJob(isExpanded ? null : index)}
-                      className="w-full flex justify-between items-center text-left py-4 focus:outline-none cursor-pointer group"
-                    >
-                      <div>
-                        <span className="font-label-caps text-[10px] text-secondary tracking-wider block mb-1">
-                          {job.period}
-                        </span>
-                        <h3 className="font-display text-xl md:text-2xl font-medium text-primary group-hover:text-secondary transition-colors">
-                          {job.role} <span className="italic font-light text-secondary">@ {job.company}</span>
-                        </h3>
-                      </div>
-                      <span className={`material-symbols-outlined text-primary transition-transform duration-300 ${
-                        isExpanded ? 'rotate-180' : ''
-                      }`}>
-                        expand_more
-                      </span>
-                    </button>
-                    <div
-                      className={`overflow-hidden transition-all duration-500 ease-editorial ${
-                        isExpanded ? 'max-h-[350px] opacity-100 mt-2' : 'max-h-0 opacity-0 pointer-events-none'
-                      }`}
-                    >
-                      <div className="border-l border-primary pl-4 py-2 space-y-2">
-                        <p className="font-body text-[14px] text-secondary leading-relaxed">
-                          {job.description}
-                        </p>
-                        <ul className="list-disc list-inside font-body text-[13px] text-secondary space-y-1">
-                          {job.bulletPoints.map((bullet, idx) => (
-                            <li key={idx}>{bullet}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                );
-              })}
+            <div className="md:col-span-8">
+              {experiences ? (
+                <div className="space-y-stack-md">
+                  {experiences.map((job, index) => {
+                    const isExpanded = expandedJob === index;
+                    return (
+                      <ScrollReveal key={job.company} delayMs={index * 100} className="border-b border-outline-variant/20 pb-4">
+                        <button
+                          onClick={() => setExpandedJob(isExpanded ? null : index)}
+                          className="w-full flex justify-between items-center text-left py-4 focus:outline-none cursor-pointer group"
+                        >
+                          <div>
+                            <span className="font-label-caps text-[10px] text-secondary tracking-wider block mb-1">
+                              {job.period}
+                            </span>
+                            <h3 className="font-display text-xl md:text-2xl font-medium text-primary group-hover:text-secondary transition-colors">
+                              {job.role} <span className="italic font-light text-secondary">@ {job.company}</span>
+                            </h3>
+                          </div>
+                          <span className={`material-symbols-outlined text-primary transition-transform duration-300 ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`}>
+                            expand_more
+                          </span>
+                        </button>
+                        <div
+                          className={`overflow-hidden transition-all duration-500 ease-editorial ${
+                            isExpanded ? 'max-h-[350px] opacity-100 mt-2' : 'max-h-0 opacity-0 pointer-events-none'
+                          }`}
+                        >
+                          <div className="border-l border-primary pl-4 py-2 space-y-2">
+                            <p className="font-body text-[14px] text-secondary leading-relaxed">
+                              {job.description}
+                            </p>
+                            <ul className="list-disc list-inside font-body text-[13px] text-secondary space-y-1">
+                              {job.bulletPoints.map((bullet, idx) => (
+                                <li key={idx}>{bullet}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </ScrollReveal>
+                    );
+                  })}
+                </div>
+              ) : (
+                <SectionLoader title="HISTORY" />
+              )}
             </div>
           </div>
         </section>
@@ -476,36 +499,42 @@ export default function Home() {
                 <h2 className="font-display text-4xl md:text-5xl font-semibold">Skill Matrix</h2>
               </ScrollReveal>
             </div>
-            <div className="md:col-span-8 space-y-stack-lg">
-              {/* Skill Tabs */}
-              <ScrollReveal className="flex flex-wrap gap-2 border-b border-outline-variant/20 pb-4">
-                {(Object.keys(SKILLS_DATA) as Array<keyof typeof SKILLS_DATA>).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveSkillsTab(tab)}
-                    className={`px-3 py-1 font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 border ${
-                      activeSkillsTab === tab
-                        ? 'border-primary bg-primary text-background'
-                        : 'border-outline-variant/40 hover:border-outline text-secondary hover:text-primary'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </ScrollReveal>
-
-              {/* Skill Chips */}
-              <div className="flex flex-wrap gap-2">
-                {SKILLS_DATA[activeSkillsTab].map((skill, index) => (
-                  <ScrollReveal
-                    key={skill}
-                    delayMs={index * 30}
-                    className="border border-outline-variant/40 px-3 py-1.5 font-label-caps text-[11px] tracking-widest text-primary hover:border-primary transition-colors duration-300"
-                  >
-                    {skill}
+            <div className="md:col-span-8">
+              {skills ? (
+                <div className="space-y-stack-lg">
+                  {/* Skill Tabs */}
+                  <ScrollReveal className="flex flex-wrap gap-2 border-b border-outline-variant/20 pb-4">
+                    {(Object.keys(skills) as Array<keyof typeof SKILLS_DATA>).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveSkillsTab(tab)}
+                        className={`px-3 py-1 font-label-caps text-[11px] uppercase tracking-wider transition-all duration-300 border ${
+                          activeSkillsTab === tab
+                            ? 'border-primary bg-primary text-background'
+                            : 'border-outline-variant/40 hover:border-outline text-secondary hover:text-primary'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                   </ScrollReveal>
-                ))}
-              </div>
+
+                  {/* Skill Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {(skills[activeSkillsTab] || []).map((skill, index) => (
+                      <ScrollReveal
+                        key={skill}
+                        delayMs={index * 30}
+                        className="border border-outline-variant/40 px-3 py-1.5 font-label-caps text-[11px] tracking-widest text-primary hover:border-primary transition-colors duration-300"
+                      >
+                        {skill}
+                      </ScrollReveal>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <SectionLoader title="SPECS" />
+              )}
             </div>
           </div>
         </section>
@@ -567,31 +596,35 @@ export default function Home() {
 
       {/* Footer */}
       <footer id="footer" className="w-full border-t border-outline-variant/30 bg-background py-stack-xl px-container-margin flex flex-col items-center space-y-stack-md text-center">
-        <ScrollReveal>
-          <div className="font-display text-3xl text-primary tracking-tighter mb-stack-md">{profile.monogram}</div>
-          <div className="flex gap-gutter mb-stack-md justify-center">
-            {(profile.socialLinks || []).map((link: any) => (
-              <a
-                key={link.platform}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors"
+        {profile ? (
+          <ScrollReveal>
+            <div className="font-display text-3xl text-primary tracking-tighter mb-stack-md">{profile.monogram}</div>
+            <div className="flex gap-gutter mb-stack-md justify-center">
+              {(profile.socialLinks || []).map((link: any) => (
+                <a
+                  key={link.platform}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  {link.platform}
+                </a>
+              ))}
+              <button
+                onClick={() => setIsContactOpen(true)}
+                className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
               >
-                {link.platform}
-              </a>
-            ))}
-            <button
-              onClick={() => setIsContactOpen(true)}
-              className="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-            >
-              Contact
-            </button>
-          </div>
-          <p className="font-label-caps text-[10px] tracking-widest text-on-secondary-fixed-variant uppercase">
-            {profile.copyrightText}
-          </p>
-        </ScrollReveal>
+                Contact
+              </button>
+            </div>
+            <p className="font-label-caps text-[10px] tracking-widest text-on-secondary-fixed-variant uppercase">
+              {profile.copyrightText}
+            </p>
+          </ScrollReveal>
+        ) : (
+          <div className="h-12 w-32 bg-outline-variant/20 animate-pulse mx-auto"></div>
+        )}
       </footer>
 
       {/* Page specific Contact Drawer */}
